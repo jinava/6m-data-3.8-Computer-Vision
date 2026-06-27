@@ -4,3 +4,7 @@ __pycache__/
 .ipynb_checkpoints/
 .venv/
 .env
+
+# Auto-downloaded datasets and trained model artifacts — never commit (see setup.md)
+notebooks/data/
+*.pt
