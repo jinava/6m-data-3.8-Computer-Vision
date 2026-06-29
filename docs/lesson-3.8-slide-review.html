@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Technical Review — Lesson 3.8 Computer Vision (slide deck)</title>
+<style>
+  :root{
+    --navy:#1f2a44; --navy-2:#2c3e66; --red:#c8102e; --amber:#b8881f;
+    --green:#0e7a4f; --ink:#1a1d24; --ink-2:#4a4f5a; --soft:#6b7280;
+    --paper:#f7f8fa; --card:#ffffff; --rule:#e3e6ec; --code-bg:#f1f3f7;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--paper);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.6;font-size:16px}
+  code,.mono{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-size:.88em;background:var(--code-bg);padding:1px 5px;border-radius:4px}
+  pre{background:var(--code-bg);border:1px solid var(--rule);border-radius:8px;padding:12px 14px;
+    overflow:auto;font-size:.85em;line-height:1.5}
+  pre code{background:none;padding:0}
+  a{color:var(--navy-2)}
+  /* layout */
+  header.top{background:linear-gradient(110deg,var(--navy),var(--navy-2));color:#fff;
+    padding:34px 7vw 30px}
+  header.top .kicker{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#aeb8d4}
+  header.top h1{margin:.25em 0 .15em;font-size:clamp(24px,3.4vw,34px);line-height:1.15}
+  header.top .sub{color:#cdd5e8;max-width:70ch}
+  header.top .meta{margin-top:18px;display:flex;flex-wrap:wrap;gap:10px 26px;font-size:13px;color:#dfe4f0}
+  header.top .meta b{color:#fff}
+  .bar{height:5px;background:var(--red)}
+  .wrap{max-width:1020px;margin:0 auto;padding:0 7vw}
+  nav.toc{position:sticky;top:0;z-index:5;background:rgba(247,248,250,.95);
+    backdrop-filter:blur(6px);border-bottom:1px solid var(--rule);padding:10px 7vw;
+    display:flex;flex-wrap:wrap;gap:8px 14px;font-size:13px}
+  nav.toc a{text-decoration:none;color:var(--ink-2)}
+  nav.toc a:hover{color:var(--red)}
+  section{padding:34px 0;border-bottom:1px solid var(--rule)}
+  h2{font-size:22px;margin:0 0 6px;display:flex;align-items:center;gap:10px}
+  h2 .n{color:var(--soft);font-weight:600;font-size:15px;font-variant-numeric:tabular-nums}
+  .lead{color:var(--ink-2);margin:0 0 20px}
+  /* finding cards */
+  .finding{background:var(--card);border:1px solid var(--rule);border-left-width:5px;
+    border-radius:10px;padding:18px 20px;margin:16px 0;box-shadow:0 1px 2px rgba(20,30,60,.04)}
+  .finding.high{border-left-color:var(--red)}
+  .finding.med{border-left-color:var(--amber)}
+  .finding.low{border-left-color:var(--soft)}
+  .finding.ok{border-left-color:var(--green)}
+  .finding h3{margin:0 0 4px;font-size:17px}
+  .badge{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.08em;
+    text-transform:uppercase;padding:2px 8px;border-radius:20px;color:#fff;vertical-align:middle;margin-right:8px}
+  .badge.high{background:var(--red)} .badge.med{background:var(--amber)}
+  .badge.low{background:var(--soft)} .badge.ok{background:var(--green)}
+  .slide{font-size:12px;color:var(--soft);font-weight:600}
+  .finding p{margin:.5em 0}
+  .finding .label{font-weight:700;color:var(--navy);font-size:13.5px;
+    text-transform:uppercase;letter-spacing:.04em;margin-top:10px}
+  .fix{background:#eef6f1;border:1px solid #cfe6da;border-radius:8px;padding:10px 14px;margin-top:10px}
+  .fix b{color:var(--green)}
+  ul.tight{margin:.4em 0;padding-left:1.2em}
+  ul.tight li{margin:.25em 0}
+  table{border-collapse:collapse;width:100%;margin:12px 0;font-size:14px}
+  th,td{border:1px solid var(--rule);padding:8px 10px;text-align:left;vertical-align:top}
+  th{background:var(--navy);color:#fff;font-weight:600}
+  tr:nth-child(even) td{background:#fafbfc}
+  .ok-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 18px}
+  @media(max-width:720px){.ok-grid{grid-template-columns:1fr}}
+  .ok-grid .it{display:flex;gap:8px;font-size:14px;align-items:baseline}
+  .ok-grid .it .ck{color:var(--green);font-weight:800}
+  footer{padding:26px 7vw;color:var(--soft);font-size:13px;background:#fff;border-top:1px solid var(--rule)}
+  .attn{background:#fff8e8;border:1px solid #f0e0b0;border-radius:8px;padding:10px 14px;font-size:13.5px;color:#6b5612}
+</style>
+</head>
+<body>
+<div class="bar"></div>
+<header class="top">
+  <div class="kicker">Technical Review · Courseware</div>
+  <h1>Lesson 3.8 — Computer Vision (CV): lecture-deck review</h1>
+  <p class="sub">An ML-engineering review of the 24-slide deck <code>Lesson 3.8 - Computer Vision.pdf</code>,
+  checking technical correctness, internal consistency, and agreement with the course notebooks. Every
+  numerical example in the deck was re-derived by hand.</p>
+  <div class="meta">
+    <span><b>File:</b> docs/Lesson 3.8 - Computer Vision.pdf (24 slides)</span>
+    <span><b>Reviewer:</b> Opus 4.8</span>
+    <span><b>Date:</b> 2026-06-29</span>
+    <span><b>Verdict:</b> Strong deck · 1 must-fix · 1 notebook conflict · minor polish</span>
+  </div>
+</header>
+
+<nav class="toc">
+  <a href="#summary">Summary</a>
+  <a href="#high">① High</a>
+  <a href="#med">② Medium</a>
+  <a href="#low">③ Low / polish</a>
+  <a href="#correct">Verified correct</a>
+  <a href="#strong">What's strong</a>
+</nav>
+
+<div class="wrap">
+
+<section id="summary">
+  <h2>Summary</h2>
+  <p class="lead">The deck is well-constructed and technically sound: all arithmetic checks out and the
+  numbers match the notebooks. There is <b>one genuine conceptual error</b> (a must-fix), <b>one mislabel
+  that contradicts the course notebook</b>, and a handful of minor consistency/polish items.</p>
+  <table>
+    <tr><th>#</th><th>Severity</th><th>Slide</th><th>Issue</th></tr>
+    <tr><td>1</td><td><span class="badge high">High</span></td><td>5 — Three Questions, Q3</td>
+        <td>Transfer learning framed as requiring a "domain close to ImageNet" — contradicts slides 20 &amp; 23 and the notebooks</td></tr>
+    <tr><td>2</td><td><span class="badge med">Medium</span></td><td>13 — Edge-detection kernels</td>
+        <td>Sobel/Prewitt <code>Gx</code>/<code>Gy</code> labelled "Horizontal/Vertical Edge Detection" — swapped vs. what they detect, and conflicts with NB&nbsp;02</td></tr>
+    <tr><td>3</td><td><span class="badge low">Low</span></td><td>13 — title</td><td>Typo: "COMPUTE VISION" (missing the R)</td></tr>
+    <tr><td>4</td><td><span class="badge low">Low</span></td><td>4, 11, 12 — diagrams</td><td>Channels-last tensor notation on slides vs. PyTorch channels-first in all code</td></tr>
+    <tr><td>5</td><td><span class="badge low">Low</span></td><td>11 — Q2 pipeline</td><td>"Fully Connected (FC) Layer → Linear" is redundant; <code>Flatten</code> missing from the chain</td></tr>
+    <tr><td>6</td><td><span class="badge low">Low</span></td><td>11 vs 12 — "CNN Block"</td><td>Two different architectures (3×3 padded vs 5×5 unpadded) shown without comment</td></tr>
+    <tr><td>7</td><td><span class="badge low">Low</span></td><td>23 — Cheat sheet</td><td>Mixes per-class and total image counts at the same threshold</td></tr>
+  </table>
+</section>
+
+<section id="high">
+  <h2><span class="n">①</span> High priority — conceptual error</h2>
+
+  <div class="finding high">
+    <div class="slide">SLIDE 5 · “Today's Three Questions” · Q3</div>
+    <h3><span class="badge high">High</span>Transfer learning is gated on “domain close to ImageNet”</h3>
+    <p>The slide states: <em>“When should we reach for transfer learning? <b>When data is small AND the
+    domain is close to ImageNet.</b>”</em></p>
+    <p>This is misleading and <b>internally inconsistent with the rest of the deck</b>. Transfer learning is
+    the right default for small data <b>regardless</b> of domain closeness — domain closeness decides
+    <i>how much you fine-tune</i> (head-only feature extraction vs. unfreezing <code>layer4</code>),
+    <b>not whether to use transfer learning at all</b>.</p>
+    <p class="label">Evidence the deck contradicts itself</p>
+    <ul class="tight">
+      <li><b>Slide 20 (“The Honest Result”)</b> shows transfer learning <i>winning</i> on Fashion-MNIST
+      (<code>0.832</code> fine-tuned vs <code>0.787</code> from scratch) — and that is explicitly the
+      <b>far</b> domain (“big domain gap”).</li>
+      <li><b>Slide 23 (“Method Cheat Sheet”)</b> says “&lt; 1K images per class → Transfer learning” with
+      <b>no</b> domain caveat.</li>
+      <li><code>lesson.md</code> states transfer is “almost always the right starting point” under ~1K/class.</li>
+    </ul>
+    <p>A sharp student will hit slide 20 and notice it directly refutes Q3.</p>
+    <div class="fix"><b>Fix:</b> reword to decouple the two decisions, e.g.
+    <em>“Reach for transfer learning whenever data is small; the domain gap then decides head-only
+    feature-extraction vs. fine-tuning the last conv block.”</em></div>
+  </div>
+</section>
+
+<section id="med">
+  <h2><span class="n">②</span> Medium — mislabel that conflicts with the notebook</h2>
+
+  <div class="finding med">
+    <div class="slide">SLIDE 13 · “Classical Edge Detection Kernels”</div>
+    <h3><span class="badge med">Medium</span>Sobel/Prewitt <code>Gx</code>/<code>Gy</code> orientation labels are swapped</h3>
+    <p>The kernel <code>Gx = [[-1,0,1],[-2,0,2],[-1,0,1]]</code> is labelled
+    <b>“Horizontal Edge Detection.”</b> But this kernel computes the <i>horizontal gradient</i> and therefore
+    responds to <b>vertical</b> edges — and the slide's own thumbnail under it shows a <b>vertical</b> white
+    line. A student reading “Horizontal Edge Detection” concludes the opposite of what the picture shows.
+    The same swap applies to <code>Gy</code> (“Vertical Edge Detection”, but it detects horizontal edges).</p>
+    <p class="label">Conflicts with the course notebook</p>
+    <p>In <code>02_convolutions_intuition.ipynb</code> (Extension E2), this <i>exact</i> kernel is named
+    <code>sobel_v</code> and correctly described as a <b>vertical</b> edge detector
+    (“reacts to left-to-right brightness changes, so it lights up VERTICAL edges”). Slide and notebook
+    therefore disagree on the same matrix.</p>
+    <div class="fix"><b>Fix:</b> label by what the kernel detects, e.g.
+    <em>“Gx (horizontal gradient → detects <b>vertical</b> edges)”</em>, so the slide, its own thumbnail,
+    and the notebook all agree.</div>
+  </div>
+</section>
+
+<section id="low">
+  <h2><span class="n">③</span> Low priority — polish &amp; consistency</h2>
+
+  <div class="finding low">
+    <div class="slide">SLIDE 13 · title</div>
+    <h3><span class="badge low">Low</span>Typo: “COMPUTE VISION”</h3>
+    <p>The header reads “THE MANUALLY CRAFTED FILTERS OF <b>COMPUTE</b> VISION” — missing the “R”
+    (Computer Vision).</p>
+  </div>
+
+  <div class="finding low">
+    <div class="slide">SLIDES 4, 11, 12 · diagrams</div>
+    <h3><span class="badge low">Low</span>Channels-last notation vs. PyTorch channels-first</h3>
+    <p>Slides use <b>channels-last</b> ordering (<code>28×28×1</code>, <code>224×224×3</code> on slides 4 &amp; 12;
+    <code>24x24x32</code> on the CNN-block diagram). The entire course code is <b>PyTorch = channels-first</b>:
+    <code>(1,28,28)</code>, <code>(B, C, H, W)</code>, as stated in the notebooks and <code>lesson.md</code>.</p>
+    <div class="fix"><b>Fix:</b> add a one-line note that slide diagrams use the H×W×C convention while PyTorch
+    tensors are C×H×W — otherwise students trip over the mismatch when they reach the code.</div>
+  </div>
+
+  <div class="finding low">
+    <div class="slide">SLIDE 11 · “Question 2” pipeline</div>
+    <h3><span class="badge low">Low</span>“FC Layer → Linear” is redundant; <code>Flatten</code> missing</h3>
+    <p>The text pipeline lists <code>… → Fully Connected (FC) Layer → Linear</code> as two sequential steps,
+    but an FC layer <i>is</i> a <code>Linear</code> layer, and <code>Flatten</code> (named in the box header)
+    is absent from the chain.</p>
+    <div class="fix"><b>Fix:</b> <code>Conv2d → ReLU → MaxPool2d → Flatten → Linear (FC)</code>.</div>
+  </div>
+
+  <div class="finding low">
+    <div class="slide">SLIDES 11 vs 12 · “The CNN Block”</div>
+    <h3><span class="badge low">Low</span>Two different architectures shown without comment</h3>
+    <p>Slide 11 uses <code>Conv2d(kernel=3, padding=1)</code> (size-preserving); slide 12's diagram uses
+    <code>5×5</code> convs with <b>no</b> padding (<code>28→24→12→8→4</code>). Both are valid, but the silent
+    switch in kernel size/padding can confuse. A one-line note that these are two illustrative configurations
+    would help.</p>
+  </div>
+
+  <div class="finding low">
+    <div class="slide">SLIDE 23 · “Method Cheat Sheet”</div>
+    <h3><span class="badge low">Low</span>Per-class vs. total counts at the same threshold</h3>
+    <p>“10K+ small images, 10 classes” (≈1K/class) sits directly above “&lt; 1K images per <b>class</b>”,
+    mixing total and per-class counts near the same boundary.</p>
+    <div class="fix"><b>Fix:</b> express both rows per-class for a clean threshold.</div>
+  </div>
+</section>
+
+<section id="correct">
+  <h2>Verified correct (re-derived by hand)</h2>
+  <p class="lead">Every computed example in the deck is accurate:</p>
+  <div class="ok-grid">
+    <div class="it"><span class="ck">✓</span><span><b>Slide 12</b> convolution dot-product = <code>-5</code>
+      (patch · vertical-edge filter)</span></div>
+    <div class="it"><span class="ck">✓</span><span><b>Slide 14</b> padded output <code>114</code>
+      (sharpen kernel, in 5 → out 5)</span></div>
+    <div class="it"><span class="ck">✓</span><span><b>Slide 15</b> stride-2 output size = <code>3</code>
+      (⌊(5−3+2)/2⌋+1)</span></div>
+    <div class="it"><span class="ck">✓</span><span><b>Slide 16</b> max-pool <code>7</code> / avg-pool <code>3</code>;
+      out size <code>2</code></span></div>
+    <div class="it"><span class="ck">✓</span><span><b>Slide 7</b> FC param counts
+      <code>200,960 / 32,896 / 1,290</code> → <code>~235K</code> and <code>~38.6M</code></span></div>
+    <div class="it"><span class="ck">✓</span><span><b>Slide 20</b> results match NB&nbsp;04 exactly
+      (<code>0.787 / 0.715 / 0.832</code>)</span></div>
+    <div class="it"><span class="ck">✓</span><span><b>Timeline</b> dates all correct (Kirsch 1957,
+      Neocognitron 1980, SIFT 1999, Viola-Jones 2001, AlexNet 2012, ResNet 2015, ViT 2020)</span></div>
+    <div class="it"><span class="ck">✓</span><span><b>Output-size formula</b>
+      <code>⌊(in − k + 2p)/s⌋ + 1</code> used consistently and correctly</span></div>
+  </div>
+</section>
+
+<section id="strong">
+  <h2>What's strong (keep as-is)</h2>
+  <ul class="tight">
+    <li><b>Honest pedagogy.</b> Slide 20 shows head-only transfer <i>losing</i> before fine-tuning recovers
+    the win — a realistic, non-hype framing rarely taught at this level.</li>
+    <li><b>Tight alignment with the notebooks.</b> Param counts, accuracy numbers, and the recipe
+    (head 3 epochs @ 1e-3, then fine-tune <code>layer4</code> @ 1e-4) all match the code.</li>
+    <li><b>Sourced diagrams.</b> setosa.io and the referenced CNN article are cited on the relevant slides.</li>
+    <li><b>Clear narrative spine.</b> The Marcus/Sarah/NorthStar thread and the “three questions” framing give
+    the deck a strong throughline into L09.</li>
+  </ul>
+  <div class="attn" style="margin-top:18px">
+    <b>Recommended action order:</b> fix <b>#1 (Q3)</b> first — it's the only true conceptual error and it's
+    refuted by the deck's own slide 20. Then <b>#2 (Sobel labels)</b>, since it actively contradicts NB&nbsp;02.
+    Everything else is cosmetic.
+  </div>
+</section>
+
+</div>
+
+<footer>
+  Review authored by <b>Opus 4.8</b> on 2026-06-29 · all numerical claims re-derived from the slide contents ·
+  cross-checked against <code>notebooks/02_convolutions_intuition.ipynb</code>,
+  <code>notebooks/04_transfer_learning.ipynb</code>, and <code>lesson.md</code>.
+  This is review feedback on the source deck; it does not modify the PDF.
+</footer>
+</body>
+</html>
