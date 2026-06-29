@@ -4,6 +4,7 @@ __pycache__/
 .ipynb_checkpoints/
 .venv/
 .env
+docs/lesson-3.8-slide-review.html
 
 # Auto-downloaded datasets and trained model artifacts — never commit (see setup.md)
 notebooks/data/
