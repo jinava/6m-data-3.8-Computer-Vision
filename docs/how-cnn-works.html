@@ -168,7 +168,7 @@ p.lead{margin:1rem 0;}
   <div class="scenario">
     <b>Imagine a paint-by-numbers grid.</b> Every tiny square (a <i>pixel</i>) has a brightness value — 0 is black, 255 is white. A photo is just a big grid of these numbers. The computer never sees a "cat"; it sees a spreadsheet of brightness.
   </div>
-  <p class="lead">Hover or play to reveal the numbers hiding behind a simple image of the letter "X".</p>
+  <p class="lead">Hover or play to reveal the numbers hiding behind a simple pixel image of a <b>cat</b> — two pointy ears, two eyes, a little nose. This is the picture our CNN will work through, step by step, until it answers "cat".</p>
 
   <div class="stage">
     <svg viewBox="0 0 420 260" id="imgSvg" role="img" aria-label="Image as a grid of pixel numbers"></svg>
@@ -191,9 +191,9 @@ p.lead{margin:1rem 0;}
   <span class="part-tag">Step 2</span>
   <h2>A filter slides across, <em>hunting for one pattern</em>.</h2>
   <div class="scenario">
-    <b>Picture a stencil moving across a page.</b> A small window — the <i>filter</i> (or kernel) — slides over the image, one patch at a time. At each spot it asks: "does this patch match the pattern I'm looking for?" A high score means "yes, found it here".
+    <b>Picture a stencil moving across a page.</b> A small window — the <i>filter</i> (or kernel) — slides over the image, one patch at a time. At each spot it asks: "does this patch match the pattern I'm looking for?" A high score means "yes, found it here". <em>To keep things readable, we zoom into a small 5×5 patch of the cat — its pointy left ear and one eye — and watch the filter scan just that.</em>
   </div>
-  <p class="lead">Watch the orange window slide. Each position produces one number in a new, smaller grid — the <b>feature map</b> — which lights up where the pattern was found.</p>
+  <p class="lead">First we wrap the image in a one-pixel border of zeros — <b>padding</b>. Without it the filter can't centre on the edge pixels and the output would shrink; with it, the <b>feature map</b> comes out the <em>same size</em> as the input. Watch the orange window slide over the padded grid — each position produces one number that lights up where the pattern was found.</p>
 
   <div class="stage">
     <svg viewBox="0 0 560 320" id="convSvg" role="img" aria-label="Convolution filter sliding over the image"></svg>
@@ -204,11 +204,12 @@ p.lead{margin:1rem 0;}
     <div class="legend">
       <span><span class="dot" style="background:#C8102E"></span> filter window (scanning)</span>
       <span><span class="dot" style="background:#B45309"></span> feature map (pattern strength)</span>
+      <span><span class="dot" style="background:#EEF1F4"></span> zero padding (added border)</span>
     </div>
   </div>
 
   <div class="takeaway"><span class="k">Remember this</span>
-    One filter detects one pattern (an edge, a curve). A real CNN runs <b>many</b> filters at once, building a stack of feature maps — one per pattern.</div>
+    One filter detects one pattern (an edge, a curve). A real CNN runs <b>many</b> filters at once, building a stack of feature maps — one per pattern. The zero <b>padding</b> (the <code>padding=1</code> you'll see in the notebook) keeps each feature map the same size as its input, so depth can be stacked without the image shrinking away.</div>
 </section>
 
 <!-- ============ PART 3 : POOLING ============ -->
@@ -218,7 +219,7 @@ p.lead{margin:1rem 0;}
   <div class="scenario">
     <b>Like summarising a paragraph in one word.</b> Pooling looks at a small block of the feature map and keeps only the strongest value (<i>max pooling</i>). The picture gets smaller and the important signals stand out — and a feature is still recognised even if it shifts a little.
   </div>
-  <p class="lead">Each 2×2 block on the left collapses to its single biggest number on the right.</p>
+  <p class="lead">We pool the whole <b>10×10 cat</b> from Step 1: each 2×2 block collapses to its single biggest number, shrinking the picture to <b>5×5</b> — half the size, yet still clearly a cat, with the ears, eyes and nose preserved.</p>
 
   <div class="stage">
     <svg viewBox="0 0 560 280" id="poolSvg" role="img" aria-label="Max pooling reducing the feature map"></svg>
@@ -329,151 +330,191 @@ function playPipe(){
   },i*450));
 }
 
-/* ---------- PART 1 : IMAGE GRID (the letter X, 5x5) ---------- */
-const Ximg=[
- [9,1,0,1,9],
- [1,9,1,9,1],
- [0,1,9,1,0],
- [1,9,1,9,1],
- [9,1,0,1,9]];
+/* ---------- PART 1 : IMAGE GRID (a pixel cat, 10x10) ---------- */
+// 0 = light background, 9 = dark cat. Eyes (2) and nose (5) stand out as features.
+const catImg=[
+ [0,0,9,0,0,0,0,9,0,0],
+ [0,9,5,9,0,0,9,5,9,0],
+ [0,9,5,5,9,9,5,5,9,0],
+ [9,5,5,5,5,5,5,5,5,9],
+ [9,5,8,5,5,5,5,8,5,9],
+ [9,5,5,5,5,5,5,5,5,9],
+ [9,5,5,5,7,7,5,5,5,9],
+ [9,5,5,5,5,5,5,5,5,9],
+ [0,9,5,5,5,5,5,5,9,0],
+ [0,0,9,9,9,9,9,9,0,0]];
+const N=catImg.length;            // 10
 let imgShowNum=false;
 function drawImg(){
   const svg=document.getElementById('imgSvg');svg.innerHTML='';
-  const s=46,ox=95,oy=15;
-  for(let r=0;r<5;r++)for(let c=0;c<5;c++){
-    const v=Ximg[r][c];
-    el('rect',{x:ox+c*s,y:oy+r*s,width:s-3,height:s-3,rx:5,fill:shade(v),stroke:'#DDE1E6'},svg);
+  const s=24,ox=90,oy=12;
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++){
+    const v=catImg[r][c];
+    el('rect',{x:ox+c*s,y:oy+r*s,width:s-2,height:s-2,rx:3,fill:shade(v),stroke:'#DDE1E6'},svg);
     if(imgShowNum){
-      el('text',{x:ox+c*s+(s-3)/2,y:oy+r*s+(s-3)/2+5,'text-anchor':'middle','font-size':'15','font-weight':'700',
+      el('text',{x:ox+c*s+(s-2)/2,y:oy+r*s+(s-2)/2+4,'text-anchor':'middle','font-size':'11','font-weight':'700',
         fill:v>5?'#fff':'#5F6B7A','font-family':'Open Sans'},svg).textContent=v;
     }
   }
   el('text',{x:210,y:255,'text-anchor':'middle','font-size':'13',fill:'#5F6B7A','font-family':'Open Sans'},svg)
-    .textContent=imgShowNum?'Same picture — now you see the numbers':'A simple image of the letter "X"';
+    .textContent=imgShowNum?'Same picture — now you see the numbers behind the cat':'A simple pixel image of a cat 🐱';
 }
 function toggleNumbers(){imgShowNum=true;drawImg();}
 function resetImg(){imgShowNum=false;drawImg();}
 
-/* ---------- PART 2 : CONVOLUTION ---------- */
-// feature map = high where filter (diagonal) matches; precomputed 3x3 for a 5x5 with 3x3 filter
-const featMap=[
- [9,2,9],
- [2,9,2],
- [9,2,9]];
+/* ---------- PART 2 : CONVOLUTION (with zero-padding) ---------- */
+// 3x3 X-detector filter, applied to the 5x5 image padded with a 1px zero border (-> 7x7).
+// "same" padding means the feature map comes out 5x5 — same size as the input.
+const convFilter=[[1,0,1],[0,1,0],[1,0,1]];
+// A zoomed-in 5x5 patch of the cat (its left ear + eye) — the small grid keeps the
+// convolution mechanics readable while still being part of the cat from Step 1.
+const convPatch=[
+ [0,0,9,0,0],   // ear tip
+ [0,9,9,9,0],
+ [9,9,9,9,9],
+ [9,2,9,9,9],   // eye
+ [9,9,9,9,9]];
+const PAD=Array.from({length:7},(_,r)=>Array.from({length:7},(_,c)=>
+  (r>=1&&r<=5&&c>=1&&c<=5)?convPatch[r-1][c-1]:0));
+const featMap=(()=>{
+  const out=[];let mx=0;
+  for(let r=0;r<5;r++){out[r]=[];for(let c=0;c<5;c++){
+    let s=0;for(let i=0;i<3;i++)for(let j=0;j<3;j++)s+=convFilter[i][j]*PAD[r+i][c+j];
+    out[r][c]=s; if(s>mx)mx=s;
+  }}
+  for(let r=0;r<5;r++)for(let c=0;c<5;c++)out[r][c]=Math.round(out[r][c]/mx*9);
+  return out;
+})();
+const CONV_STEPS=25; // 5x5 output positions
 let convTimer=null;
 function drawConv(step){
   const svg=document.getElementById('convSvg');svg.innerHTML='';
-  const s=40,ox=20,oy=40;
-  // input grid
-  el('text',{x:20+ (5*s)/2,y:25,'text-anchor':'middle','font-size':'12','font-weight':'700',fill:'#1B2A4A','font-family':'Open Sans'},svg).textContent='INPUT IMAGE';
-  for(let r=0;r<5;r++)for(let c=0;c<5;c++){
-    el('rect',{x:ox+c*s,y:oy+r*s,width:s-3,height:s-3,rx:4,fill:shade(Ximg[r][c]),stroke:'#DDE1E6'},svg);
+  const s=30,ox=15,oy=55;
+  // padded input grid (7x7): outer ring is zero padding, inner 5x5 is the image
+  el('text',{x:ox+(7*s)/2,y:38,'text-anchor':'middle','font-size':'12','font-weight':'700',fill:'#1B2A4A','font-family':'Open Sans'},svg).textContent='CAT PATCH (zero-padded)';
+  for(let r=0;r<7;r++)for(let c=0;c<7;c++){
+    const isPad=(r===0||r===6||c===0||c===6);
+    el('rect',{x:ox+c*s,y:oy+r*s,width:s-3,height:s-3,rx:3,
+      fill:isPad?'#EEF1F4':shade(convPatch[r-1][c-1]),
+      stroke:isPad?'#D6DBE0':'#DDE1E6','stroke-dasharray':isPad?'3 2':'0'},svg);
+    if(isPad) el('text',{x:ox+c*s+(s-3)/2,y:oy+r*s+(s-3)/2+4,'text-anchor':'middle','font-size':'10',
+      fill:'#AEB6BF','font-family':'Open Sans'},svg).textContent='0';
   }
-  // feature map (right)
-  const fx=380,fs=46;
-  el('text',{x:fx+(3*fs)/2,y:25,'text-anchor':'middle','font-size':'12','font-weight':'700',fill:'#B45309','font-family':'Open Sans'},svg).textContent='FEATURE MAP';
-  for(let r=0;r<3;r++)for(let c=0;c<3;c++){
-    const idx=r*3+c;
+  // feature map (right): 5x5, same size as the un-padded input
+  const fs=34,fx=360,fy=55;
+  el('text',{x:fx+(5*fs)/2,y:38,'text-anchor':'middle','font-size':'12','font-weight':'700',fill:'#B45309','font-family':'Open Sans'},svg).textContent='FEATURE MAP (5×5)';
+  for(let r=0;r<5;r++)for(let c=0;c<5;c++){
+    const idx=r*5+c;
     const filled= step>idx;
     const v=featMap[r][c];
-    el('rect',{x:fx+c*fs,y:oy+r*fs,width:fs-4,height:fs-4,rx:5,
-      fill:filled?`rgba(180,83,9,${0.25+0.75*v/9})`:'#fff',stroke:'#DDE1E6'},svg);
-    if(filled) el('text',{x:fx+c*fs+(fs-4)/2,y:oy+r*fs+(fs-4)/2+5,'text-anchor':'middle','font-size':'14','font-weight':'700',
+    el('rect',{x:fx+c*fs,y:fy+r*fs,width:fs-4,height:fs-4,rx:4,
+      fill:filled?`rgba(180,83,9,${0.18+0.82*v/9})`:'#fff',stroke:'#DDE1E6'},svg);
+    if(filled) el('text',{x:fx+c*fs+(fs-4)/2,y:fy+r*fs+(fs-4)/2+4,'text-anchor':'middle','font-size':'12','font-weight':'700',
       fill:v>5?'#fff':'#B45309','font-family':'Open Sans'},svg).textContent=v;
   }
-  // sliding window
-  if(step>=0&&step<9){
-    const wr=Math.floor(step/3),wc=step%3;
-    el('rect',{x:ox+wc*s-2,y:oy+wr*s-2,width:s*3,height:s*3,rx:6,fill:'rgba(200,16,46,0.12)',
+  // sliding 3x3 window over the padded grid
+  if(step>=0&&step<CONV_STEPS){
+    const wr=Math.floor(step/5),wc=step%5;
+    el('rect',{x:ox+wc*s-2,y:oy+wr*s-2,width:s*3,height:s*3,rx:5,fill:'rgba(200,16,46,0.12)',
       stroke:'#C8102E','stroke-width':'3'},svg);
     // connector arrow to current feature cell
-    const tr=Math.floor(step/3),tc=step%3;
-    el('line',{x1:ox+wc*s+s*1.5,y1:oy+wr*s+s*1.5,x2:fx+tc*fs+(fs-4)/2,y2:oy+tr*fs+(fs-4)/2,
-      stroke:'#C8102E','stroke-width':'1.5','stroke-dasharray':'4 3',opacity:'0.6'},svg);
+    el('line',{x1:ox+wc*s+s*1.5,y1:oy+wr*s+s*1.5,x2:fx+wc*fs+(fs-4)/2,y2:fy+wr*fs+(fs-4)/2,
+      stroke:'#C8102E','stroke-width':'1.5','stroke-dasharray':'4 3',opacity:'0.55'},svg);
   }
   el('text',{x:280,y:300,'text-anchor':'middle','font-size':'12',fill:'#5F6B7A','font-family':'Open Sans'},svg)
-    .textContent=step>=9?'Done — the X-shape lit up along the diagonals':'The filter checks one patch, scores it, moves on';
+    .textContent=step>=CONV_STEPS?'Done — padding kept the map 5×5, and the X lit up along the diagonals':'The filter centres on every pixel — even the corners, thanks to padding';
 }
 function playConv(){
   resetConv();const btn=document.getElementById('convBtn');btn.disabled=true;
   let step=0;drawConv(step);
-  convTimer=setInterval(()=>{step++;drawConv(step);if(step>=9){clearInterval(convTimer);btn.disabled=false;}},650);
+  convTimer=setInterval(()=>{step++;drawConv(step);if(step>=CONV_STEPS){clearInterval(convTimer);btn.disabled=false;}},420);
 }
 function resetConv(){if(convTimer)clearInterval(convTimer);drawConv(-1);}
 
 /* ---------- PART 3 : POOLING ---------- */
-// 4x4 feature map -> 2x2 via max pooling
-const poolIn=[
- [1,6,3,2],
- [4,9,1,0],
- [7,2,8,3],
- [1,5,4,9]];
-const poolOut=[[9,3],[7,9]];
+// Max-pool the 10x10 cat from Step 1. MaxPool2d(2) takes 2x2 blocks with stride 2;
+// 10 is even so it tiles perfectly into a 5x5 output — half the size, still a cat.
+const poolIn=catImg;             // <- the cat image from Step 1
+const POOL_N=5;
+const poolOut=(()=>{
+  const out=[];
+  for(let r=0;r<POOL_N;r++){out[r]=[];for(let c=0;c<POOL_N;c++){
+    out[r][c]=Math.max(poolIn[2*r][2*c],poolIn[2*r][2*c+1],poolIn[2*r+1][2*c],poolIn[2*r+1][2*c+1]);
+  }}
+  return out;
+})();
+const POOL_STEPS=POOL_N*POOL_N;  // 25 output cells
 let poolTimer=null;
 function drawPool(step){
   const svg=document.getElementById('poolSvg');svg.innerHTML='';
-  const s=44,ox=20,oy=50;
-  el('text',{x:ox+2*s,y:35,'text-anchor':'middle','font-size':'12','font-weight':'700',fill:'#1B2A4A','font-family':'Open Sans'},svg).textContent='FEATURE MAP (4×4)';
-  for(let r=0;r<4;r++)for(let c=0;c<4;c++){
-    const v=poolIn[r][c];
-    el('rect',{x:ox+c*s,y:oy+r*s,width:s-3,height:s-3,rx:4,fill:`rgba(180,83,9,${0.12+0.6*v/9})`,stroke:'#DDE1E6'},svg);
-    el('text',{x:ox+c*s+(s-3)/2,y:oy+r*s+(s-3)/2+5,'text-anchor':'middle','font-size':'13','font-weight':'600',fill:'#1B2A4A','font-family':'Open Sans'},svg).textContent=v;
+  const s=22,ox=18,oy=42;
+  el('text',{x:ox+5*s,y:28,'text-anchor':'middle','font-size':'12','font-weight':'700',fill:'#1B2A4A','font-family':'Open Sans'},svg).textContent='CAT (10×10, from Step 1)';
+  for(let r=0;r<10;r++)for(let c=0;c<10;c++){
+    el('rect',{x:ox+c*s,y:oy+r*s,width:s-2,height:s-2,rx:2,fill:shade(poolIn[r][c]),stroke:'#E4E7EB'},svg);
   }
-  // output
-  const os=52,fx=400,fy=70;
-  el('text',{x:fx+os,y:35,'text-anchor':'middle','font-size':'12','font-weight':'700',fill:'#B45309','font-family':'Open Sans'},svg).textContent='POOLED (2×2)';
-  for(let r=0;r<2;r++)for(let c=0;c<2;c++){
-    const idx=r*2+c, filled=step>idx, v=poolOut[r][c];
-    el('rect',{x:fx+c*os,y:fy+r*os,width:os-4,height:os-4,rx:6,fill:filled?'#B45309':'#fff',stroke:'#DDE1E6'},svg);
-    if(filled)el('text',{x:fx+c*os+(os-4)/2,y:fy+r*os+(os-4)/2+6,'text-anchor':'middle','font-size':'18','font-weight':'700',fill:'#fff','font-family':'Open Sans'},svg).textContent=v;
+  // output 5x5
+  const os=26,fx=400,fy=42;
+  el('text',{x:fx+2.5*os,y:28,'text-anchor':'middle','font-size':'12','font-weight':'700',fill:'#B45309','font-family':'Open Sans'},svg).textContent='POOLED (5×5)';
+  for(let r=0;r<5;r++)for(let c=0;c<5;c++){
+    const idx=r*5+c, filled=step>idx, v=poolOut[r][c];
+    el('rect',{x:fx+c*os,y:fy+r*os,width:os-3,height:os-3,rx:3,
+      fill:filled?shade(v):'#fff',stroke:'#DDE1E6'},svg);
+    if(filled)el('text',{x:fx+c*os+(os-3)/2,y:fy+r*os+(os-3)/2+4,'text-anchor':'middle','font-size':'11','font-weight':'700',
+      fill:v>5?'#fff':'#5F6B7A','font-family':'Open Sans'},svg).textContent=v;
   }
-  // current block highlight
-  if(step>=0&&step<4){
-    const br=Math.floor(step/2),bc=step%2;
-    el('rect',{x:ox+bc*2*s-2,y:oy+br*2*s-2,width:s*2,height:s*2,rx:6,fill:'rgba(200,16,46,0.10)',stroke:'#C8102E','stroke-width':'3'},svg);
+  // current 2x2 block highlight + connector to the output cell being filled
+  if(step>=0&&step<POOL_STEPS){
+    const br=Math.floor(step/5),bc=step%5;
+    el('rect',{x:ox+bc*2*s-1,y:oy+br*2*s-1,width:s*2,height:s*2,rx:4,fill:'rgba(200,16,46,0.16)',stroke:'#C8102E','stroke-width':'2.5'},svg);
+    el('line',{x1:ox+bc*2*s+s,y1:oy+br*2*s+s,x2:fx+bc*os+(os-3)/2,y2:fy+br*os+(os-3)/2,
+      stroke:'#C8102E','stroke-width':'1.5','stroke-dasharray':'4 3',opacity:'0.45'},svg);
   }
-  el('text',{x:280,y:265,'text-anchor':'middle','font-size':'12',fill:'#5F6B7A','font-family':'Open Sans'},svg)
-    .textContent=step>=4?'16 numbers became 4 — only the strongest survived':'Each 2×2 block keeps just its biggest value';
+  el('text',{x:280,y:268,'text-anchor':'middle','font-size':'12',fill:'#5F6B7A','font-family':'Open Sans'},svg)
+    .textContent=step>=POOL_STEPS?'100 pixels became 25 — half the size, and still clearly a cat':'Each 2×2 block keeps just its biggest value';
 }
 function playPool(){
   resetPool();const btn=document.getElementById('poolBtn');btn.disabled=true;
   let step=0;drawPool(step);
-  poolTimer=setInterval(()=>{step++;drawPool(step);if(step>=4){clearInterval(poolTimer);btn.disabled=false;}},700);
+  poolTimer=setInterval(()=>{step++;drawPool(step);if(step>=POOL_STEPS){clearInterval(poolTimer);btn.disabled=false;}},200);
 }
 function resetPool(){if(poolTimer)clearInterval(poolTimer);drawPool(-1);}
 
-/* ---------- PART 4 : FLATTEN ---------- */
-const flatVals=[9,3,7,9];
+/* ---------- PART 4 : FLATTEN (5x5 pooled cat -> 25 inputs) ---------- */
+// The 5x5 pooled cat from Step 3, read out row by row into a single 1-D list of 25.
+const flatVals=poolOut.flat();
+const FLAT_N=flatVals.length;    // 25
 let flatTimer=null;
 function drawFlat(step){
   const svg=document.getElementById('flatSvg');svg.innerHTML='';
-  const s=54,ox=40,oy=30;
-  el('text',{x:ox+s,y:18,'text-anchor':'middle','font-size':'12','font-weight':'700',fill:'#1B2A4A','font-family':'Open Sans'},svg).textContent='2×2 GRID';
-  const pos=[[0,0],[0,1],[1,0],[1,1]];
-  // line targets
-  const lx=170,ly=170,gap=66;
-  el('text',{x:lx+1.5*gap,y:150,'text-anchor':'middle','font-size':'12','font-weight':'700',fill:'#B45309','font-family':'Open Sans'},svg).textContent='ONE LONG LINE OF INPUTS';
-  for(let i=0;i<4;i++){
-    const [r,c]=pos[i];
+  const s=22,ox=20,oy=24;
+  el('text',{x:ox+2.5*s,y:15,'text-anchor':'middle','font-size':'12','font-weight':'700',fill:'#1B2A4A','font-family':'Open Sans'},svg).textContent='5×5 POOLED CAT';
+  // destination line
+  const lx=12,ly=178,bw=18,gap=21.4;
+  el('text',{x:280,y:152,'text-anchor':'middle','font-size':'12','font-weight':'700',fill:'#B45309','font-family':'Open Sans'},svg).textContent='ONE LONG LINE OF 25 INPUTS';
+  for(let i=0;i<FLAT_N;i++){
+    const r=Math.floor(i/5),c=i%5;
     const moved=step>i;
-    // grid cell (stays, dims when moved)
-    el('rect',{x:ox+c*s,y:oy+r*s,width:s-5,height:s-5,rx:6,fill:moved?'#EEE':'#B45309',stroke:'#DDE1E6'},svg);
-    el('text',{x:ox+c*s+(s-5)/2,y:oy+r*s+(s-5)/2+6,'text-anchor':'middle','font-size':'17','font-weight':'700',fill:moved?'#bbb':'#fff','font-family':'Open Sans'},svg).textContent=flatVals[i];
-    // landed cell in the line
+    // grid cell (dims once it has marched out)
+    el('rect',{x:ox+c*s,y:oy+r*s,width:s-2,height:s-2,rx:3,fill:moved?'#EEE':shade(flatVals[i]),stroke:'#DDE1E6'},svg);
+    el('text',{x:ox+c*s+(s-2)/2,y:oy+r*s+(s-2)/2+4,'text-anchor':'middle','font-size':'10','font-weight':'700',
+      fill:moved?'#bbb':(flatVals[i]>5?'#fff':'#5F6B7A'),'font-family':'Open Sans'},svg).textContent=flatVals[i];
+    // landed box in the line
+    const bxx=lx+i*gap;
     if(moved){
-      el('rect',{x:lx+i*gap,y:ly,width:50,height:50,rx:6,fill:'#B45309',stroke:'#DDE1E6'},svg);
-      el('text',{x:lx+i*gap+25,y:ly+31,'text-anchor':'middle','font-size':'17','font-weight':'700',fill:'#fff','font-family':'Open Sans'},svg).textContent=flatVals[i];
+      el('rect',{x:bxx,y:ly,width:bw,height:bw,rx:3,fill:shade(flatVals[i]),stroke:'#DDE1E6'},svg);
+      el('text',{x:bxx+bw/2,y:ly+bw/2+4,'text-anchor':'middle','font-size':'9','font-weight':'700',
+        fill:flatVals[i]>5?'#fff':'#5F6B7A','font-family':'Open Sans'},svg).textContent=flatVals[i];
     } else {
-      el('rect',{x:lx+i*gap,y:ly,width:50,height:50,rx:6,fill:'#fff',stroke:'#DDE1E6','stroke-dasharray':'4 3'},svg);
+      el('rect',{x:bxx,y:ly,width:bw,height:bw,rx:3,fill:'#fff',stroke:'#DDE1E6','stroke-dasharray':'3 2'},svg);
     }
   }
-  el('text',{x:280,y:225,'text-anchor':'middle','font-size':'12',fill:'#5F6B7A','font-family':'Open Sans'},svg)
-    .textContent=step>=4?'Same four numbers — just a single row now':'Reading the grid out, cell by cell';
+  el('text',{x:280,y:222,'text-anchor':'middle','font-size':'12',fill:'#5F6B7A','font-family':'Open Sans'},svg)
+    .textContent=step>=FLAT_N?'Same 25 numbers — just a single row now':'Reading the grid out, cell by cell';
 }
 function playFlat(){
   resetFlat();const btn=document.getElementById('flatBtn');btn.disabled=true;
   let step=0;drawFlat(step);
-  flatTimer=setInterval(()=>{step++;drawFlat(step);if(step>=4){clearInterval(flatTimer);btn.disabled=false;}},650);
+  flatTimer=setInterval(()=>{step++;drawFlat(step);if(step>=FLAT_N){clearInterval(flatTimer);btn.disabled=false;}},130);
 }
 function resetFlat(){if(flatTimer)clearInterval(flatTimer);drawFlat(0);}
 
@@ -482,41 +523,48 @@ const classes=[{n:'Cat',p:0.82},{n:'Dog',p:0.13},{n:'Bird',p:0.05}];
 let denseTimer=null;
 function drawDense(stage){ // stage: 0 inputs,1 connections,2 bars
   const svg=document.getElementById('denseSvg');svg.innerHTML='';
-  const inX=70,inY=[60,130,200];const vals=[9,3,7,9];
-  // input nodes (4)
-  const iy=[45,105,165,225];
-  el('text',{x:inX,y:25,'text-anchor':'middle','font-size':'11','font-weight':'700',fill:'#B45309','font-family':'Open Sans'},svg).textContent='FEATURES';
+  const inX=72;                  // vertical column of feature nodes
+  el('text',{x:inX,y:24,'text-anchor':'middle','font-size':'11','font-weight':'700',fill:'#B45309','font-family':'Open Sans'},svg).textContent='25 FEATURES';
+  // Show 10 of the 25 nodes (first 5 + last 5); an ellipsis stands in for the hidden middle.
+  const topYs=[40,65,90,115,140], botYs=[176,201,226,251,276];
+  const nodes=[];
+  topYs.forEach((y,i)=>nodes.push({y,v:flatVals[i]}));
+  botYs.forEach((y,i)=>nodes.push({y,v:flatVals[20+i]}));
   // output nodes
-  const outX=300,outY=[80,150,220];
-  el('text',{x:outX,y:25,'text-anchor':'middle','font-size':'11','font-weight':'700',fill:'#1B2A4A','font-family':'Open Sans'},svg).textContent='OPTIONS';
-  // connections
+  const outX=320,outY=[95,160,225];
+  el('text',{x:outX,y:24,'text-anchor':'middle','font-size':'11','font-weight':'700',fill:'#1B2A4A','font-family':'Open Sans'},svg).textContent='OPTIONS';
+  // connections: every feature node votes toward every option (Cat strongest)
   if(stage>=1){
-    iy.forEach(y1=>outY.forEach((y2,j)=>{
-      el('line',{x1:inX+18,y1:y1,x2:outX-22,y2:y2,stroke:'#C8102E',
-        'stroke-width': j===0?'2':'1','opacity': j===0?'0.55':'0.18'},svg);
+    nodes.forEach(n=>outY.forEach((y2,j)=>{
+      el('line',{x1:inX+13,y1:n.y,x2:outX-20,y2:y2,stroke:'#C8102E',
+        'stroke-width': j===0?'1':'0.6','opacity': j===0?0.40:0.12},svg);
     }));
   }
-  iy.forEach((y,i)=>{
-    el('circle',{cx:inX,cy:y,r:16,fill:'#B45309'},svg);
-    el('text',{x:inX,y:y+5,'text-anchor':'middle','font-size':'13','font-weight':'700',fill:'#fff','font-family':'Open Sans'},svg).textContent=vals[i];
+  // feature nodes (drawn on top of the lines)
+  nodes.forEach(n=>{
+    el('circle',{cx:inX,cy:n.y,r:13,fill:'#B45309'},svg);
+    el('text',{x:inX,y:n.y+4,'text-anchor':'middle','font-size':'11','font-weight':'700',fill:'#fff','font-family':'Open Sans'},svg).textContent=n.v;
   });
+  // ellipsis between the two groups (the 15 hidden features)
+  el('text',{x:inX,y:162,'text-anchor':'middle','font-size':'20','font-weight':'700',fill:'#9AA3AD','font-family':'Open Sans'},svg).textContent='⋮';
+  // output nodes
   outY.forEach((y,j)=>{
     el('circle',{cx:outX,cy:y,r:18,fill:'#fff',stroke:'#1B2A4A','stroke-width':'2'},svg);
     el('text',{x:outX,y:y+5,'text-anchor':'middle','font-size':'11','font-weight':'700',fill:'#1B2A4A','font-family':'Open Sans'},svg).textContent=classes[j].n;
   });
   // probability bars
   if(stage>=2){
-    const bx=360,bw=150;
+    const bx=380,bw=140;
     classes.forEach((cl,j)=>{
-      const y=outY[j]-14;
+      const y=outY[j]-13;
       el('rect',{x:bx,y:y,width:bw,height:26,rx:5,fill:'#EFEFEF'},svg);
       el('rect',{x:bx,y:y,width:bw*cl.p,height:26,rx:5,fill:j===0?'#C8102E':'#AAB2BD'},svg);
-      el('text',{x:bx+bw+8,y:y+18,'font-size':'13','font-weight':'700',fill:j===0?'#C8102E':'#5F6B7A','font-family':'Open Sans'},svg).textContent=Math.round(cl.p*100)+'%';
+      el('text',{x:bx+bw+6,y:y+18,'font-size':'13','font-weight':'700',fill:j===0?'#C8102E':'#5F6B7A','font-family':'Open Sans'},svg).textContent=Math.round(cl.p*100)+'%';
     });
-    el('text',{x:280,y:285,'text-anchor':'middle','font-size':'13','font-weight':'700',fill:'#C8102E','font-family':'Open Sans'},svg).textContent='Prediction: it’s a Cat (82% sure)';
+    el('text',{x:280,y:288,'text-anchor':'middle','font-size':'13','font-weight':'700',fill:'#C8102E','font-family':'Open Sans'},svg).textContent='Prediction: it’s a Cat (82% sure)';
   } else {
-    el('text',{x:280,y:285,'text-anchor':'middle','font-size':'12',fill:'#5F6B7A','font-family':'Open Sans'},svg)
-      .textContent=stage>=1?'Every feature votes toward every option…':'Press play to connect the features to the options';
+    el('text',{x:280,y:288,'text-anchor':'middle','font-size':'12',fill:'#5F6B7A','font-family':'Open Sans'},svg)
+      .textContent=stage>=1?'All 25 features vote toward every option…':'Press play to connect the features to the options';
   }
 }
 function playDense(){
