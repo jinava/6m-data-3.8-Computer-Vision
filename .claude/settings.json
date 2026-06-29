@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -E 'data/|\\\\.pt$|\\\\.gz$|\\\\.tar')",
+      "Bash(git check-ignore *)",
+      "Bash(python -c ' *)",
+      "Bash(grep -E 'data/|\\\\.pt$')",
+      "Bash(xargs du -ch)",
+      "Bash(python -c \"from torchvision.datasets import FashionMNIST,CIFAR10; print\\('FMNIST has targets attr:', hasattr\\(FashionMNIST,'__init__'\\)\\)\")",
+      "Bash(git rm *)",
+      "Bash(python -)",
+      "Bash(git diff *)",
+      "Read(//home/jinava/**)",
+      "Bash(git checkout *)",
+      "Bash(git rev-list *)",
+      "Bash(git remote *)",
+      "Bash(gh auth *)",
+      "Bash(git merge *)",
+      "Bash(git add *)",
+      "Bash(grep -rn *)",
+      "Bash(grep -n *)",
+      "Bash(git commit -q -m 'NB01: add [Opus 4.8] notes on bias and the section-7 thought-questions *)",
+      "Bash(grep -c *)"
+    ]
+  }
+}

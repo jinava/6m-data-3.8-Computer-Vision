@@ -5,6 +5,7 @@ __pycache__/
 .venv/
 .env
 docs/lesson-3.8-slide-review.html
+docs/lesson-3.8-slide-review.md
 
 # Auto-downloaded datasets and trained model artifacts — never commit (see setup.md)
 notebooks/data/
