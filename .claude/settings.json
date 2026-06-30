@@ -20,7 +20,18 @@
       "Bash(grep -rn *)",
       "Bash(grep -n *)",
       "Bash(git commit -q -m 'NB01: add [Opus 4.8] notes on bias and the section-7 thought-questions *)",
-      "Bash(grep -c *)"
+      "Bash(grep -c *)",
+      "Bash(cd /home/jinava/dsai3f/6m-data-3.8-Computer-Vision *)",
+      "Read(//home/jinava/dsai3f/**)",
+      "Bash(python3 -)",
+      "Read(//home/jinava/dsai3f/6m-data-3.1-Introduction-to-Machine-Learning/**)",
+      "Read(//home/jinava/dsai3f/6m-data-3.2-Probability-Statistics-for-Machine-Learning/**)",
+      "Read(//home/jinava/dsai3f/6m-data-3.3-Supervised-Learning/**)",
+      "Read(//home/jinava/dsai3f/6m-data-3.4-Supervised-Learning-Advanced/**)",
+      "Read(//home/jinava/dsai3f/6m-data-3.5-Unsupervised-Learning/**)",
+      "Read(//home/jinava/dsai3f/6m-data-3.6-Time-Series-Forecasting/**)",
+      "Read(//home/jinava/dsai3f/6m-data-3.9-Natural-Language-Processing/**)",
+      "Read(//home/jinava/dsai3f/6m-data-3.10-Transformers-Attention-GenAI/**)"
     ]
   }
 }
